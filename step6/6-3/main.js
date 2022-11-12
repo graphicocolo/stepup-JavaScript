@@ -12,5 +12,5 @@ async function displayMessage() {
   messageElm.innerHTML = data.message;
 }
 // npx http-server だと正常に表示されない
-// VS Code で試すと正常表示される
+// VS Code の Go Live で試すと正常表示される
 displayMessage();
