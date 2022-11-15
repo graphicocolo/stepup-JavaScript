@@ -1,4 +1,4 @@
-// 見本コードを見ずにリファクタリング
+// 見本コードを確認しながらリファクタリング
 
 // 仕様のまとめ
 // 都道府県と市区町村を選択可能なセレクトボックスがある
@@ -14,33 +14,35 @@
 
 // 意識すべきこと
 // 地域セレクタの本体を生成する場所（rootElm）を AreaSelector クラスの外から渡せるようにする
-// オプションタグを作成する処理は変数名が違うだけで同様なため、共通化する（toOptionsHtml）
+// オプションタグを生成する処理は変数名が違うだけで同様なため、共通化する（toOptionsHtml）
 // インスタンス変数を定義して状態を持つようにする
 
 class AreaSelector {
   constructor(rootElm) {
     // 地域セレクタの本体を生成する場所をインスタンス変数に代入
     this.rootElm = rootElm;
+    // AJAX で取得する都道府県情報
+    this.prefectures = [];
+    // AJAX で取得する市区町村情報
+    this.cities = [];
     // 都道府県セレクタの状態を保持するインスタンス変数
-    this.preCode = '001';
+    this.preCode = null;
   }
 
-  init() {
-    const prefSelectorElm = this.rootElm.querySelector('.prefectures');
-    prefSelectorElm.addEventListener('change', (event) => {
-      this.updatePref();
-      this.updateCity();
-    });
+  async init() {
+    // 初期描画のために update〜() メソッドを呼んでいる
+    await this.updatePref();
+    await this.updateCity();
   }
 
-  // AJAX で取得した都道府県データデータ（JSON）を解析、オブジェクトとして返す
+  // AJAX で取得した都道府県データ（JSON）を解析、オブジェクトとして返す
   async getPrefs() {
     const prefResponse = await fetch("./prefectures.json");
     return await prefResponse.json();
   }
   // AJAX で取得した市区町村データ（JSON）を解析、オブジェクトとして返す
-  async getCities() {
-    const cityResponse = await fetch(`./cities/${this.preCode}.json`);
+  async getCities(preCode) {
+    const cityResponse = await fetch(`./cities/${preCode}.json`);
     return await cityResponse.json();
   }
 
@@ -48,26 +50,48 @@ class AreaSelector {
   // セレクトボックスへ反映
   async updatePref() {
     this.prefectures = await this.getPrefs();
-    this.toOptionsHtml(this.prefectures);
+    this.preCode = this.prefectures[0].code;
+    this.createPrefOptionsHtml();
   }
   async updateCity() {
-    // 都道府県情報のセレクトボックスから市区町村を取得するため code 情報を取得
+    this.cities = await this.getCities(this.preCode)
+    this.createCityOptionsHtml();
+  }
+
+  // 都道府県の option タグに生成されたデータを流し込む
+  // ユーザーによって都度変更される option タグはこれなので
+  // ここにイベントハンドラを仕掛ける
+  // イベントハンドラを仕掛ける option タグが変更されるタイミング
+  createPrefOptionsHtml() {
     const prefSelectorElm = this.rootElm.querySelector('.prefectures');
-    this.cities = await this.getCities(prefSelectorElm.value)
-    this.toOptionsHtml(this.cities);
+    prefSelectorElm.innerHTML = this.toOptionsHtml(this.prefectures);
+
+    prefSelectorElm.addEventListener('change', (event) => {
+      console.log(event);
+      this.preCode = event.target.value;
+      this.updateCity();
+    });
+  }
+  // 市区町村の option タグに生成されたデータを流し込む
+  createCityOptionsHtml() {
+    const citySelectorElm = this.rootElm.querySelector('.cities');
+    citySelectorElm.innerHTML = this.toOptionsHtml(this.cities);
   }
 
   // option タグを生成
-  toOptionsHtml(datas) {
-    const optionStrs = [];
-    for(const data of datas) {
-      optionStrs.push(`
-        <option name="${data.name}" value="${data.code}">
-          ${data.name}
+  // map() で、元の配列の要素それぞれに同じ演算を加えてその結果の新たな配列を返す
+  // 同じ演算 = 今回は records に含まれる各要素を option タグの文字列に変換している
+  // 最後に join() で連結して文字列の戻り値としている
+  toOptionsHtml(records) {
+    return records.map((record) => {
+      return `
+        <option name="${record.name}" value="${record.code}">
+          ${record.name}
         </option>
-      `);
-    }
+      `;
+    }).join('');
   }
 }
 
-new AreaSelector(document.getElementById('areaSelector')).init();
+const areaSelector = new AreaSelector(document.getElementById('areaSelector'));
+areaSelector.init();
