@@ -1,7 +1,10 @@
+// もっと簡単に async, await, Promise
+// https://qiita.com/kerupani129/items/cf4048a7d4e3aad75881
+// Promise, async, await がやっていること (Promise と async は書き換え可能？)
 // https://qiita.com/kerupani129/items/2619316d6ba0ccd7be6a
 // https://ja.javascript.info/promise-api
 
-// Promise.all を使用、通信を各データファイルにつき一度ずつだけにする仕様
+// Promise.all を使用、通信を各データファイル1ファイルにつき一度ずつだけにする仕様
 
 // ルートになる要素を取得
 const rootElm = document.getElementById('areaSelector');
@@ -16,6 +19,8 @@ async function initAreaSelector() {
   const [prefs, ...cities] = await Promise.all([
     // ここで手動で prefCode を入れるのではなく自動で入れられたら良い
     // 余裕があれば改善
+    // 1. getPrefs() を活用して code の値を prefs に代入
+    // 2. 直下の cities/〜.json のファイル名を prefs に代入
     getPrefs(), getCities('001'), getCities('002'), getCities('003')
   ]);
 
