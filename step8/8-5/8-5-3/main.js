@@ -20,19 +20,21 @@ let _cities;
 async function initAreaSelector() {
   const prefs = await getPrefs();
   _prefs = prefs;
-  console.log(_prefs.length);
-  // _prefs.code を使って getCities() を繰り返す
-  let temp;
-  temp = _prefs.map(pref => {
-    getCities(pref.code)
-  });
-  const [...cities] = await Promise.all([temp]);
-  console.log(cities);
+  const _prefsCode = _prefs.map(pref => pref.code);
+  const cityArray = [];
+  for (i = 0;i < _prefsCode.length;i++) {
+    cityArray.push(getCities(_prefsCode[i]));
+  }
+  const [...cities] = await Promise.all(cityArray);
+  _cities = {};
+  for (i = 0;i < _prefsCode.length;i++) {
+    let serial = new String(i + 1);
+    serial = `00${serial}`;
+    _cities[`${serial}`] = cities[i];
+  }
 
-  const [...testCities] = await Promise.all([
-    getCities('001'), getCities('002'), getCities('003')
-  ]);
-  console.log(testCities[2]);
+  await updatePref();
+  await updateCity();
 }
 
 // AJAX で取得した都道府県データ（JSON）を解析、オブジェクトとして返す
