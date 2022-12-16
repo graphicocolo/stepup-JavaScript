@@ -23,7 +23,6 @@ async function initAreaSelector() {
   // 都道府県初期データ取得
   const prefs = await getPrefs();
   _prefs = prefs;
-  // const _prefsCode = _prefs.map(pref => pref.code);
 
   const cityArray = [];
   for (let pref of _prefs) {
@@ -39,29 +38,6 @@ async function initAreaSelector() {
     serial = `00${serial}`;
     _cities[`${serial}`] = cities[index];
   });
-
-  // ↓動かないコード
-  // cities.forEach((city, index) => {
-  //   console.log(`${index}: ${city}`);
-  //   ↓この行怪しい...
-  //   _cities[`${city[index][].prefCode}`] = cities[index];
-  // });
-
-  // ↓動かないコード
-  // let i = 0;
-  // for (let city of cities) {
-    // let serial = city.prefCode;
-    // cities[] に値の入れようがない？
-    // _cities[serial] = cities[i];
-  // }
-
-  // ↓正常に動くコード
-  // for ではなく for of でスマートに記述したい
-  // for (i = 0;i < _prefsCode.length;i++) {
-  //   let serial = new String(i + 1);
-  //   serial = `00${serial}`;
-  //   _cities[`${serial}`] = cities[i];
-  // }
 
   // 都道府県・市区町村初期データ設定
   await updatePref();
