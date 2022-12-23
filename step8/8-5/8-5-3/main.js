@@ -26,7 +26,7 @@ async function initAreaSelector() {
 
   const cityArray = [];
   for (let pref of _prefs) {
-    cityArray.push(getCities(pref.code));
+    cityArray.push(await getCities(pref.code));
   }
 
   // 市区町村初期データ取得
