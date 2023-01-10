@@ -1,14 +1,18 @@
 class WordQuiz {
   constructor(rootElm) {
     this.rootElm = rootElm;
+    // ゲームのステータス
+    this.gameStatus = {};
+    this.resetGame();
   }
 
+  // 初期化処理
   async init() {
     await this.fetchQuizData();
     this.displayStartView();
   }
 
-  // データ取得・格納
+  // 問題データ取得・格納
   async fetchQuizData() {
     try {
       const response = await fetch('quiz.json');
@@ -20,10 +24,32 @@ class WordQuiz {
     }
   }
 
-  // データ表示要素の生成
-  // 開始画面の表示
+  // 現在表示している設問が最後の設問か否かを判定
+  isLastStep() {
+    const currentQuestions = this.quizData[this.gameStatus.level];
+    return this.gameStatus.step === Object.keys(currentQuestions).length;
+  }
+
+  // 同レベル内の問題番号（step1）に対応した設問を表示
+  nextStep() {
+    if (this.isLastStep()) {
+      this.displayResultView();
+    } else {
+      this.gameStatus.step++;
+      this.displayQuestionView();
+    }
+  }
+
+  resetGame() {
+    this.gameStatus.level = null; // 選択されたレベル
+    this.gameStatus.step = 1; // 現在表示している設問の番号
+  }
+
+  // 開始画面の表示、データ表示要素の生成
   displayStartView() {
     const levelStrs = Object.keys(this.quizData);
+    // ゲームのステータスの初期化
+    this.gameStatus.level = levelStrs[0];
     const optionStrs = [];
     for (let i = 0; levelStrs.length > i; i++) {
       optionStrs.push(`<option value="${levelStrs[i]}" name="level">レベル${i + 1}</option>`);
@@ -37,6 +63,12 @@ class WordQuiz {
     const parentElm = document.createElement('div');
     parentElm.innerHTML = html;
 
+    // 難易度の値の変更を gameStatus オブジェクトにセットするための処理
+    const selectorElm = parentElm.querySelector('.levelSelector');
+    selectorElm.addEventListener('change', (event) => {
+      this.gameStatus.level = event.target.value;
+    });
+
     const starBtnElm = parentElm.querySelector('.startBtn');
     starBtnElm.addEventListener('click', () => {
       this.displayQuestionView();
@@ -47,18 +79,34 @@ class WordQuiz {
 
   // 問題の表示
   displayQuestionView() {
+    console.log(`選択中のレベル：${this.gameStatus.level}`);
+    const stepKey = `step${this.gameStatus.step}`;
+    const currentQuestion = this.quizData[this.gameStatus.level][stepKey];
+
+    const choiceStrs = [];
+    for (const choice of currentQuestion.choices) {
+      choiceStrs.push(`
+        <label>
+          <input type="radio" name="choice" value="${choice}">${choice}
+        </label>
+      `);
+    }
+
     const html = `
-      <p>ゲームを開始しました</p>
-      <button class="retireBtn">ゲームを終了する</button>
+      <p>${currentQuestion.word}</p>
+      <div>${choiceStrs.join('')}</div>
+      <div class="actions">
+        <button class="nextBtn">解答する</button>
+      </div>
     `;
 
     const parentElm = document.createElement('div');
     parentElm.className = 'question';
     parentElm.innerHTML = html;
 
-    const resetBtnElm = parentElm.querySelector('.retireBtn');
-    resetBtnElm.addEventListener('click', () => {
-      this.displayResultView();
+    const nextBtnElm = parentElm.querySelector('.nextBtn');
+    nextBtnElm.addEventListener('click', () => {
+      this.nextStep();
     });
 
     this.replaceView(parentElm);
@@ -77,6 +125,7 @@ class WordQuiz {
 
     const resetBtnElm = parentElm.querySelector('.resetBtn');
     resetBtnElm.addEventListener('click', () => {
+      this.resetGame();
       this.displayStartView();
     });
 
